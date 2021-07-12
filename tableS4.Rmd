@@ -1,0 +1,254 @@
+---
+title: "ICMS-E Research"
+author: "Patricia G. C. Ruggiero"
+date: "12/11/2020"
+output: html_document
+---
+
+## ICMS-E robustness - Varying versions of Marginal Gain variable (MG)
+
+```{r setup,include=FALSE}
+library(plm)
+library(lmtest)
+library(multiwayvcov)
+library(sandwich)
+library(clubSandwich)
+library(stargazer)
+library(ggplot2)
+library(Rcpp)
+library(tidyr)
+library(dplyr)
+library(grid)
+library(gridExtra)
+library(kableExtra)
+library(knitr)
+library(DT)
+library(xtable)
+library(pander)
+library(Hmisc)
+library(ggthemes)
+
+#Data
+setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/edicao_painel")
+load(file = "master_amc.Rdata")
+master <- master_amc
+
+master$law_state <- as.numeric(as.character(master$lei_state))
+master$law_muni <- as.numeric(as.character(master$lei_muni))
+master$mgirs_law <- master$share3*master$law_state
+master$mgirs_law2 <- master$share3*master$law_muni
+master$linear_law <- master$share1*master$law_state
+master$linear_law2 <- master$share1*master$law_muni
+master$log_law <- master$share2*master$law_muni
+master$log_law2 <- master$share2*master$law_muni
+
+```
+
+
+
+### 1) ICMS-E effect on State PAs
+  
+  
+#### 1.1) STATE VERY RESTRICTED PAs (Proteção Integral e Uso Sustentável - PIUS)
+  
+
+#### Modelo 01: log share
+
+```{r, echo=FALSE, results='hide'}
+model01<-plm(Esta_PIUS_year_percent ~ log_law + law_state + Total_PIUS_acumulated + agri_value + 
+               densi_boi_km2, 
+             data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year"))
+summary(model01)
+```
+
+```{r, echo=FALSE, results='hide'}
+m1s <- coeftest(model01, vcovCR(model01, cluster = "individual", type = "CR1S"))
+m1s
+```
+
+
+```{r, echo=FALSE}
+setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/finals_2021")
+
+vs <- c("Log crowd x ICMS-e law","ICMS-e law", "Lack space for PAs (no APAs)","Agricultural Production","Livestock")
+
+stargazer(m1s, type = "latex", digits = 4, title = "TableS4: Column State Rest (log).", align = TRUE, covariate.labels = vs, no.space = TRUE, out = "tableS4_1.tex")
+```
+  
+
+#### Modelo 02: linear share
+
+```{r, echo=FALSE, results='hide'}
+model02<-plm(Esta_PIUS_year_percent ~ linear_law + law_state + Total_PIUS_acumulated + agri_value + 
+               densi_boi_km2, 
+             data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year"))
+summary(model02)
+```
+
+```{r, echo=FALSE, results='hide'}
+m2s <- coeftest(model02, vcovCR(model02, cluster = "individual", type = "CR1S"))
+m2s
+```
+
+```{r, echo=FALSE}
+setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/finals_2021")
+
+vs <- c("Linear crowd x ICMS-e law","ICMS-e law", "Lack space for PAs (no APAs)","Agricultural Production","Livestock")
+
+stargazer(m2s, type = "latex", digits = 4, title = "TableS4: Column State Rest (linear).", align = TRUE, covariate.labels = vs, no.space = TRUE, out = "tableS4_2.tex")
+```
+
+
+#### 1.2) STATE APAs   
+
+#### Modelo 03: log share
+```{r, echo=FALSE, results='hide'}
+model03 <-plm(Esta_APA_year_percent ~ log_law + law_state + Total_PIUS_acumulated + APA_acumulated + agri_value + densi_boi_km2, 
+            data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year")) 
+summary(model03)
+```
+
+```{r, echo=FALSE, results='hide'}
+m3s <- coeftest(model03, vcovCR(model03, cluster = master$codigo, type = "CR1S"))
+m3s
+```
+
+```{r, echo=FALSE}
+setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/finals_2021")
+
+vs <- c("Log crowd x ICMS-e law","ICMS-e law", "Lack space for PAs (no APAs)", "Lack space for APAs","Agricultural Production","Livestock")
+
+stargazer(m3s, type = "latex", digits = 4, title = "TableS4: Column 3.", align = TRUE, covariate.labels = vs, no.space = TRUE, out = "tableS4_3.tex")
+
+```
+
+#### Modelo 04: linear share
+
+```{r, echo=FALSE, results='hide'}
+model04 <-plm(Esta_APA_year_percent ~ linear_law + law_state + Total_PIUS_acumulated + APA_acumulated + agri_value + densi_boi_km2, 
+            data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year")) 
+summary(model04)
+```
+
+```{r, echo=FALSE, results='hide'}
+m4s <- coeftest(model04, vcovCR(model04, cluster = master$codigo, type = "CR1S"))
+m4s
+```
+
+```{r, echo=FALSE}
+setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/finals_2021")
+
+vs <- c("Linear crowd x ICMS-e law","ICMS-e law", "Lack space for PAs (no APAs)", "Lack space for APAs","Agricultural Production","Livestock")
+
+stargazer(m4s, type = "latex", digits = 4, title = "TableS4: Column 4.", align = TRUE, covariate.labels = vs, no.space = TRUE, out = "tableS4_4.tex")
+```
+
+  
+### 2) ICMS-E law effect on Municipal PAs
+  
+#### 2.1) MUNICIPAL VERY RESTRICTED PAs (Proteção Integral and Uso Sustentavel - PIUS) 
+  
+#### Modelo 05: log
+
+```{r, echo=FALSE, results='hide'}
+model05<-plm(Muni_PIUS_year_percent ~ log_law2 + law_muni + Total_PIUS_acumulated + agri_value + densi_boi_km2, 
+            data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year"))
+summary(model05)
+```
+
+
+```{r, echo=FALSE, results='hide'}
+m5s <- coeftest(model05, vcovCR(model05, cluster = master$codigo, type = "CR1S"))
+m5s
+```
+  
+  
+```{r, echo=FALSE}
+setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/finals_2021")
+
+vs <- c("Log crowd x ICMS-e law","ICMS-e law", "Lack space for PAs (no APAs)","Agricultural Production","Livestock")
+
+stargazer(m5s, type = "latex", digits = 4, title = "TableS4: Column 5.", align = TRUE, covariate.labels = vs, no.space = TRUE, out = "tableS4_5.tex")
+
+```
+
+#### Modelo 06: linear
+
+```{r, echo=FALSE, results='hide'}
+model06<-plm(Muni_PIUS_year_percent ~ linear_law2 + law_muni + Total_PIUS_acumulated + agri_value + densi_boi_km2, 
+            data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year"))
+summary(model06)
+```
+
+```{r, echo=FALSE, results='hide'}
+m6s <- coeftest(model06, vcovCR(model06, cluster = master$codigo, type = "CR1S"))
+m6s
+
+```
+
+```{r, echo=FALSE}
+setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/finals_2021")
+
+vs <- c("Linear crowd x ICMS-e law","ICMS-e law", "Lack space for PAs (no APAs)","Agricultural Production","Livestock")
+
+stargazer(m6s, type = "latex", digits = 4, title = "TableS4: Column 6.", align = TRUE, covariate.labels = vs, no.space = TRUE, out = "tableS4_6.tex")
+```
+
+  
+#### 2.2) MUNICIPAL APAs 
+
+#### Modelo 07: log
+
+```{r, echo=FALSE, results='hide'}
+model07<-plm(Muni_APA_year_percent ~ log_law2 + law_muni + Total_PIUS_acumulated + APA_acumulated + agri_value + densi_boi_km2, 
+            data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year"))
+summary(model07)
+```
+
+
+```{r, echo=FALSE, results='hide'}
+m7s <- coeftest(model07, vcovCR(model07, cluster = master$codigo, type = "CR1S"))
+m7s
+```
+
+```{r, echo=FALSE}
+setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/finals_2021")
+
+vs <- c("Log crowd x ICMS-e law","ICMS-e law", "Lack space for PAs (no APAs)", "Lack space for APAs","Agricultural Production","Livestock")
+
+stargazer(m7s, type = "latex", digits = 4, title = "TableS4: Column 7.", align = TRUE, covariate.labels = vs, no.space = TRUE, out = "tableS4_7.tex")
+```
+
+#### Modelo 08: linear
+
+```{r, echo=FALSE, results='hide'}
+model08 <-plm(Muni_APA_year_percent ~ linear_law2 + law_muni + Total_PIUS_acumulated + APA_acumulated + agri_value + densi_boi_km2, 
+            data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year"))
+summary(model08)
+```
+
+```{r, echo=FALSE, results='hide'}
+m8s <- coeftest(model08, vcovCR(model08, cluster = master$codigo, type = "CR1S"))
+m8s
+```
+
+```{r, echo=FALSE}
+setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/finals_2021")
+
+vs <- c("Linear crowd x ICMS-e law","ICMS-e law", "Lack space for PAs (no APAs)", "Lack space for APAs","Agricultural Production","Livestock")
+
+stargazer(m8s, type = "latex", digits = 4, title = "TableS4: Column 8.", align = TRUE, covariate.labels = vs, no.space = TRUE, out = "tableS4_8.tex")
+```
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.

@@ -1,0 +1,281 @@
+---
+title: "ICMS-E Research"
+author: "Patricia G. C. Ruggiero"
+date: "14/06/2021"
+output: html_document
+---
+
+# Resultados com PLM e Callaway & Sant'Anna DID
+
+## ICMS-E results - Law:MGIRS (without MGIRS itself) UNWEIGHTED
+
+```{r}
+#devtools::install_github("bcallaway11/did")
+```
+
+
+```{r setup,include=FALSE}
+#############
+#Library
+#############
+library(plm)
+library(lmtest)
+library(multiwayvcov)
+library(sandwich)
+library(clubSandwich)
+library(stargazer)
+library(ggplot2)
+library(Rcpp)
+library(tidyr)
+library(dplyr)
+library(grid)
+library(gridExtra)
+library(kableExtra)
+library(knitr)
+library(DT)
+library(xtable)
+library(pander)
+library(Hmisc)
+library(ggthemes)
+library(did)
+
+#Data
+setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/edicao_painel")
+load(file = "master_did.Rdata")
+
+```
+
+
+### 1) ICMS-E effect on State PAs
+  
+  
+#### 1.1) STATE VERY RESTRICTED PAs (Proteção Integral e Uso Sustentável - PIUS)
+  
+*Using PLM*
+
+```{r, echo=FALSE, results='hide'}
+m01_twfe <-plm(Esta_PIUS_year_percent ~ law_state, 
+             data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year"))
+summary(m01_twfe)
+```
+
+```{r, echo=FALSE, results='hide'}
+m1fe <- coeftest(m01_twfe, vcovCR(m01_twfe, cluster = "individual", type = "CR1S"))
+m1fe
+```
+
+*Callaway & Santanna*
+
+```{r, echo=FALSE, results='hide'}
+m01_cs <- att_gt(yname = "Esta_PIUS_year_percent",
+              gname = "icms_st_year",
+              idname = "codigo",
+              tname = "year",
+              xformla = ~ 1,
+              panel = TRUE,
+              control_group = "notyettreated",
+              data = master)
+
+summary(m01_cs)
+```
+
+
+```{r}
+ag_m01 <- aggte(m01_cs, type = "dynamic", min_e = -5, max_e = 10)
+m01g <- ggdid(ag_m01)
+m01g
+```
+
+
+```{r}
+ag_m01b <- aggte(m01_cs, type = "dynamic", min_e = -5, max_e = Inf)
+m01gb <- ggdid(ag_m01b)
+m01gb
+```
+
+
+#### 1.2) STATE APAs   
+
+```{r, echo=FALSE, results='hide'}
+m02_twfe <-plm(Esta_APA_year_percent ~ law_state, 
+             data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year"))
+summary(m02_twfe)
+```
+
+```{r, echo=FALSE, results='hide'}
+m2fe <- coeftest(m02_twfe, vcovCR(m02_twfe, cluster = master$codigo, type = "CR1S"))
+m2fe
+```
+
+```{r}
+m02_cs <- att_gt(yname = "Esta_APA_year_percent",
+              gname = "icms_st_year",
+              idname = "codigo",
+              tname = "year",
+              xformla = ~ 1,
+              panel = TRUE,
+              control_group = "notyettreated",
+              data = master)
+summary(m02_cs)
+```
+
+```{r}
+ag_m02 <- aggte(m02_cs, type = "dynamic", min_e = -5, max_e = 10)
+m02g <- ggdid(ag_m02)
+m02g
+```
+
+```{r}
+ag_m02b <- aggte(m02_cs, type = "dynamic", min_e = -5, max_e = Inf)
+m02gb <- ggdid(ag_m02b)
+m02gb
+```
+
+
+### 2) ICMS-E law effect on Municipal PAs
+  
+   Aqui lembrando: we consider municipal PAs in all states with ICMS-eco law, except São Paulo that doesn't use municipal PAs area in the icms-e calculus.
+  
+#### 2.1) MUNICIPAL VERY RESTRICTED PAs (Proteção Integral and Uso Sustentavel - PIUS) 
+  
+```{r, echo=FALSE, results='hide'}
+m03_twfe <-plm(Muni_PIUS_year_percent ~ law_muni, 
+             data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year"))
+summary(m03_twfe)
+```
+
+```{r, echo=FALSE, results='hide'}
+m3fe <- coeftest(m03_twfe, vcovCR(m03_twfe, cluster = master$codigo, type = "CR1S"))
+m3fe
+```
+
+```{r}
+m03_cs <- att_gt(yname = "Muni_PIUS_year_percent",
+              gname = "icms_mu_year",
+              idname = "codigo",
+              tname = "year",
+              xformla = ~ 1,
+              panel = TRUE,
+              control_group = "notyettreated",
+              data = master)
+summary(m03_cs)
+```
+
+```{r}
+ag_m03 <- aggte(m03_cs, type = "dynamic", min_e = -5, max_e = 10)
+m03g <- ggdid(ag_m03)
+m03g
+```
+
+```{r}
+ag_m03b <- aggte(m03_cs, type = "dynamic", min_e = -5, max_e = Inf)
+m03gb <- ggdid(ag_m03b)
+m03gb
+```
+
+ 
+#### 2.2) MUNICIPAL APAs 
+
+```{r, echo=FALSE, results='hide'}
+m04_twfe <-plm(Muni_APA_year_percent ~ law_muni, 
+             data = master, effect = "twoways",
+            model = "within", index = c("codigo", "year"))
+summary(m04_twfe)
+```
+
+```{r, echo=FALSE, results='hide'}
+m4fe <- coeftest(m04_twfe, vcovCR(m04_twfe, cluster = master$codigo, type = "CR1S"))
+m4fe
+```
+
+```{r}
+m04_cs <- att_gt(yname = "Muni_APA_year_percent",
+              gname = "icms_mu_year",
+              idname = "codigo",
+              tname = "year",
+              xformla = ~ 1,
+              panel = TRUE,
+              control_group = "notyettreated",
+              data = master)
+summary(m04_cs)
+```
+
+```{r}
+ag_m04 <- aggte(m04_cs, type = "dynamic", min_e = -5, max_e = 10)
+m04g <- ggdid(ag_m04)
+m04g
+```
+
+```{r}
+ag_m04b <- aggte(m04_cs, type = "dynamic", min_e = -5, max_e = Inf)
+m04gb <- ggdid(ag_m04b)
+m04gb
+```
+
+
+## All Results
+
+```{r}
+#Exporta
+setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/analises/did_call_sant")
+
+#Coefficients and SE from Callaway & Sant'Anna's limiting -5 to +10
+t1 <- data.frame(coefficient = c(ag_m01$overall.att,ag_m02$overall.att,ag_m03$overall.att,ag_m04$overall.att),
+                se = c(ag_m01$overall.se,ag_m02$overall.se,ag_m03$overall.se,ag_m04$overall.se))
+n <- c("State - Restricted", "State - APAs", "Municipal - Restricted","Municipal - APAs")
+row.names(t1) <- n
+
+#Coefficients and SE from Callaway & Sant'Anna's only limiting -5
+t2 <- data.frame(coefficient = c(ag_m01b$overall.att,ag_m02b$overall.att,ag_m03b$overall.att,ag_m04b$overall.att),
+                se = c(ag_m01b$overall.se,ag_m02b$overall.se,ag_m03b$overall.se,ag_m04b$overall.se))
+row.names(t2) <- n
+
+stargazer(m01_twfe,m02_twfe,m03_twfe,m04_twfe, type = "latex", digits = 4, title = "Average Treatment Effect (ATT) for the effect of ICMS-E on new state and municipal PAs, restricted and unrestricted..", align = TRUE, no.space = TRUE, out = "icmse_CeSdid_part1.tex")
+print(xtable(t1, digits = 4), file = "icmse_CeSdid_part2.tex")
+
+print(xtable(t2, digits = 4), file = "icmse_CeSdid_part3.tex")
+
+```
+
+```{r}
+#Faz uma figura com os gráficos e exporta
+#setwd("/Users/Patricia/Dropbox/doutorado/parte2_ICMS_eco/figuras/figure_ATT_call_sant")
+setwd("/Users/Patricia/Dropbox/publicacoes/ICMS-e/EcolEcon/R1")
+png("CeS_ATT_figure_R1.png", width = 30, height = 19, units = "cm", res = 300)
+pushViewport(viewport(layout = grid.layout(6, 2, widths = unit(c(1,1), c("null", "null")), heights=unit(c(2,1,1,2,1,1),c("lines","lines","null","lines","lines","null")))))
+print(m01g, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
+print(m02g, vp = viewport(layout.pos.row = 3, layout.pos.col = 2))
+print(m03g, vp = viewport(layout.pos.row = 6, layout.pos.col = 1))
+print(m04g, vp = viewport(layout.pos.row = 6, layout.pos.col = 2))
+upViewport() 
+#grid.text("State PAs", x = unit(0.5, "npc"), y = unit(0.98, "npc"), gp=gpar(fontsize=18,fontface=2))
+grid.text("State - Restricted", x = unit(0.27, "npc"), y = unit(0.95, "npc"), gp=gpar(fontsize=16))
+grid.text("State - Unrestricted", x = unit(0.76, "npc"), y = unit(0.95, "npc"), gp=gpar(fontsize=16))
+#grid.text("Municipal PAs", x = unit(0.5, "npc"), y = unit(0.48, "npc"), gp=gpar(fontsize=18,fontface=2))
+grid.text("Municipal - Restricted", x = unit(0.27, "npc"), y = unit(0.45, "npc"), gp=gpar(fontsize=16))
+grid.text("Municipal - Unrestricted", x = unit(0.76, "npc"), y = unit(0.45, "npc"), gp=gpar(fontsize=16))
+dev.off()
+
+png("CeS_ATT_figure_inf_R1.png", width = 30, height = 19, units = "cm", res = 300)
+pushViewport(viewport(layout = grid.layout(6, 2, widths = unit(c(1,1), c("null", "null")), heights=unit(c(2,1,1,2,1,1),c("lines","lines","null","lines","lines","null")))))
+print(m01gb, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
+print(m02gb, vp = viewport(layout.pos.row = 3, layout.pos.col = 2))
+print(m03gb, vp = viewport(layout.pos.row = 6, layout.pos.col = 1))
+print(m04gb, vp = viewport(layout.pos.row = 6, layout.pos.col = 2))
+upViewport() 
+#grid.text("State PAs", x = unit(0.5, "npc"), y = unit(0.98, "npc"), gp=gpar(fontsize=18,fontface=2))
+grid.text("State - Restricted", x = unit(0.27, "npc"), y = unit(0.95, "npc"), gp=gpar(fontsize=16))
+grid.text("State - Unrestricted", x = unit(0.76, "npc"), y = unit(0.95, "npc"), gp=gpar(fontsize=16))
+#grid.text("Municipal PAs", x = unit(0.5, "npc"), y = unit(0.48, "npc"), gp=gpar(fontsize=18,fontface=2))
+grid.text("Municipal - Restricted", x = unit(0.27, "npc"), y = unit(0.45, "npc"), gp=gpar(fontsize=16))
+grid.text("Municipal - Unrestricted", x = unit(0.76, "npc"), y = unit(0.45, "npc"), gp=gpar(fontsize=16))
+dev.off()
+```
+
+  
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
